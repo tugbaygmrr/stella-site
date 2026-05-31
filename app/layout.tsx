@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "./i18n/LanguageProvider";
@@ -21,6 +21,12 @@ export const metadata: Metadata = {
   title: "Stella Istanbul — Shaping Silence. Elevating Spaces.",
   description:
     "Premium acoustic wall panels and MDF systems manufactured in Türkiye for modern interiors.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

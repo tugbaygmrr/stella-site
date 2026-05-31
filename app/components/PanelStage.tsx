@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, Suspense, useEffect, useState } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF, Environment } from "@react-three/drei";
 import { useScroll, useTransform, type MotionValue } from "framer-motion";
 import * as THREE from "three";
@@ -25,15 +25,31 @@ type PanelMotion = {
 function Panel(motion: PanelMotion) {
   const { scene } = useGLTF(MODEL_PATH);
   const ref = useRef<THREE.Group>(null);
+  const invalidate = useThree((s) => s.invalidate);
+
+  // Cache the material list once instead of traversing the scene every frame.
+  const materialsRef = useRef<THREE.Material[]>([]);
+  const lastOpacity = useRef(-1);
+  useEffect(() => {
+    const mats: THREE.Material[] = [];
+    scene.traverse((obj) => {
+      const mesh = obj as THREE.Mesh;
+      if (!mesh.material) return;
+      const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      for (const m of list) {
+        m.transparent = true;
+        mats.push(m);
+      }
+    });
+    materialsRef.current = mats;
+    // Model is ready — request a frame so it paints in on-demand mode.
+    invalidate();
+  }, [scene, invalidate]);
 
   useFrame(() => {
     if (!ref.current) return;
 
-    ref.current.position.set(
-      motion.x.get(),
-      motion.y.get(),
-      motion.z.get()
-    );
+    ref.current.position.set(motion.x.get(), motion.y.get(), motion.z.get());
     ref.current.rotation.set(
       motion.rotX.get(),
       motion.rotY.get(),
@@ -41,20 +57,16 @@ function Panel(motion: PanelMotion) {
     );
     ref.current.scale.setScalar(motion.scale.get());
 
-    // Apply opacity by mutating materials so the panel can fade in/out
+    // Only touch materials when the opacity actually changed.
     const o = motion.opacity.get();
-    scene.traverse((obj) => {
-      const mesh = obj as THREE.Mesh;
-      if (!mesh.material) return;
-      const materials = Array.isArray(mesh.material)
-        ? mesh.material
-        : [mesh.material];
-      for (const m of materials) {
-        m.transparent = true;
+    if (o !== lastOpacity.current) {
+      lastOpacity.current = o;
+      const depthWrite = o > 0.99;
+      for (const m of materialsRef.current) {
         m.opacity = o;
-        m.depthWrite = o > 0.99;
+        m.depthWrite = depthWrite;
       }
-    });
+    }
   });
 
   return (
@@ -64,9 +76,32 @@ function Panel(motion: PanelMotion) {
   );
 }
 
+/**
+ * With `frameloop="demand"` the canvas only renders when asked. The scene is
+ * static except while scrolling, so we request a frame on each scroll change
+ * (and once on mount). This drops idle GPU usage to zero — the main fix for
+ * scroll jank on mobile — while keeping the panel fully animated on scroll.
+ */
+function ScrollInvalidator({ scrollY }: { scrollY: MotionValue<number> }) {
+  const invalidate = useThree((s) => s.invalidate);
+  useEffect(() => {
+    invalidate();
+    const unsub = scrollY.on("change", () => invalidate());
+    return () => unsub();
+  }, [scrollY, invalidate]);
+  return null;
+}
+
 export default function PanelStage() {
   const { scrollY } = useScroll();
   const [vh, setVh] = useState(900);
+  // Resolved synchronously on the client (this component is client-only via
+  // dynamic import), so the WebGL context is created with the right settings.
+  const [isMobile] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 1023px)").matches
+  );
 
   useEffect(() => {
     const update = () => setVh(window.innerHeight);
@@ -149,9 +184,10 @@ export default function PanelStage() {
       aria-hidden
     >
       <Canvas
+        frameloop="demand"
         camera={{ position: [0, 0, 5], fov: 30 }}
-        gl={{ antialias: true, alpha: true }}
-        dpr={[1, 2]}
+        gl={{ antialias: !isMobile, alpha: true, powerPreference: "high-performance" }}
+        dpr={isMobile ? 1 : [1, 1.5]}
       >
         <ambientLight intensity={0.55} />
         <directionalLight
@@ -169,6 +205,7 @@ export default function PanelStage() {
           intensity={0.25}
           color="#8ea38f"
         />
+        <ScrollInvalidator scrollY={scrollY} />
         <Suspense fallback={null}>
           <Panel
             opacity={opacity}

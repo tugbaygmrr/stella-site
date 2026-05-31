@@ -46,12 +46,12 @@ function CornerStat({
   return (
     <motion.div
       style={{ opacity, x, y }}
-      className={`absolute ${positionClass} max-w-[260px] z-20 pointer-events-none`}
+      className={`absolute ${positionClass} max-w-[42vw] sm:max-w-[260px] z-20 pointer-events-none`}
     >
       <div className="text-[10px] tracking-[0.3em] uppercase text-warm/55 font-medium mb-3">
         {label}
       </div>
-      <div className="font-serif font-light text-[64px] md:text-[96px] leading-none text-warm">
+      <div className="font-serif font-light text-[44px] sm:text-[64px] md:text-[96px] leading-none text-warm">
         {value}
       </div>
       <span

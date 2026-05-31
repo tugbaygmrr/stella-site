@@ -280,6 +280,136 @@ function Featured({ idx }: { idx: number }) {
   );
 }
 
+/** Mobile / tablet layout — the podium scene is desktop-only, so phones get
+ *  a clean stacked list of product cards instead of a microscopic landscape. */
+function MobileProducts({ t }: { t: (typeof TX)[keyof typeof TX] }) {
+  const badges = [
+    { k: "nrc" as const, v: "NRC 0.4", l: t.badges.nrc },
+    { k: "ce" as const, v: "CE", l: t.badges.ce },
+    { k: "sus" as const, v: t.sustainable, l: t.badges.sus },
+  ];
+
+  return (
+    <div className="px-6 py-16 sm:px-10 lg:hidden">
+      {/* heading */}
+      <div className="mb-10">
+        <div className="mb-4 flex items-center gap-3">
+          <span className="font-semibold" style={{ color: GREEN, fontSize: 18 }}>
+            02
+          </span>
+          <span
+            style={{ color: GREEN, fontSize: 12, letterSpacing: "0.18em" }}
+          >
+            {t.eyebrow}
+          </span>
+          <span className="h-px flex-1" style={{ background: "#809383" }} />
+        </div>
+        <h2
+          className="font-serif font-medium"
+          style={{
+            color: "#007468",
+            fontSize: "clamp(40px,12vw,72px)",
+            lineHeight: 0.95,
+          }}
+        >
+          {t.h}
+        </h2>
+        <p
+          className="mt-4 text-[15px] leading-relaxed"
+          style={{ color: "#2d2d2d" }}
+        >
+          {t.desc[0]} {t.desc[1]}
+        </p>
+      </div>
+
+      {/* product cards */}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        {PRODUCTS.map((p) => (
+          <div
+            key={p.n}
+            className="overflow-hidden rounded-[24px] bg-warm shadow-[0_30px_60px_-40px_rgba(24,40,28,0.45)]"
+          >
+            <div
+              className="relative aspect-[4/3]"
+              style={{ background: "#e8dcc8" }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/images/products/big${p.n}.png`}
+                alt={p.name}
+                className="absolute inset-0 h-full w-full object-contain p-4"
+              />
+            </div>
+            <div className="p-6">
+              <div
+                className="font-semibold"
+                style={{ color: "#1c1c1c", fontSize: 18 }}
+              >
+                {p.name}
+              </div>
+              <div
+                className="mt-1 uppercase"
+                style={{
+                  color: "#8a8275",
+                  fontSize: 11,
+                  letterSpacing: "0.16em",
+                }}
+              >
+                {p.cat}
+              </div>
+              <div className="mt-5 flex flex-col gap-3">
+                {badges.map((b) => (
+                  <div key={b.k} className="flex items-center gap-3">
+                    <span
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                      style={{ background: "rgba(0,0,0,0.045)", color: "#1c1c1c" }}
+                    >
+                      <span style={{ width: "50%", height: "50%" }}>
+                        <SpecIcon kind={b.k} />
+                      </span>
+                    </span>
+                    <div>
+                      <div
+                        style={{ color: "#1c1c1c", fontWeight: 600, fontSize: 13, lineHeight: 1.1 }}
+                      >
+                        {b.v}
+                      </div>
+                      <div style={{ color: "#8a8275", fontSize: 11, lineHeight: 1.2 }}>
+                        {b.l}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* catalog CTA */}
+      <a
+        href="https://stella-ist.com/catalog/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-10 flex items-center justify-between rounded-full px-7 py-4"
+        style={{
+          background: GREEN,
+          color: "#fff",
+          boxShadow: "0 16px 30px -14px rgba(20,40,28,0.55)",
+        }}
+      >
+        <span style={{ fontWeight: 600, fontSize: 15 }}>{t.details}</span>
+        <span
+          className="flex h-9 w-9 items-center justify-center rounded-full"
+          style={{ border: "1px solid rgba(255,255,255,0.55)", fontSize: 16 }}
+        >
+          ↗
+        </span>
+      </a>
+    </div>
+  );
+}
+
 export default function ProductShowcase() {
   const { lang } = useTranslation();
   const t = TX[lang];
@@ -293,7 +423,14 @@ export default function ProductShowcase() {
       className="w-full overflow-hidden"
       style={{ background: "#efe6d8" }}
     >
-      <div className="relative w-full" style={{ aspectRatio: "1638 / 960" }}>
+      {/* ───────── MOBILE / TABLET (below lg) — stacked cards ───────── */}
+      <MobileProducts t={t} />
+
+      {/* ───────── DESKTOP (lg+) — podium scene ───────── */}
+      <div
+        className="relative hidden w-full lg:block"
+        style={{ aspectRatio: "1638 / 960" }}
+      >
         {/* background render */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img

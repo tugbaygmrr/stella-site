@@ -50,7 +50,7 @@ export default function Navigation() {
       transition={{ duration: 1.1, ease: [0.65, 0, 0.05, 1] }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ${
         scrolled
-          ? "bg-warm/80 backdrop-blur-xl border-b border-charcoal/5"
+          ? "bg-warm/95 border-b border-charcoal/5 md:bg-warm/80 md:backdrop-blur-xl"
           : "bg-transparent"
       }`}
     >
@@ -160,7 +160,7 @@ export default function Navigation() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.5, ease: [0.65, 0, 0.05, 1] }}
-            className="md:hidden px-6 pb-8 bg-warm/95 backdrop-blur-xl"
+            className="md:hidden px-6 pb-8 bg-warm/95"
           >
             <ul className="flex flex-col gap-5 pt-2">
               {navItems.map((item) => (

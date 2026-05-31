@@ -89,7 +89,7 @@ export default function Hero() {
           <span
             className="font-serif italic select-none leading-[0.9] text-gradient-brand"
             style={{
-              fontSize: "clamp(180px, 28vw, 520px)",
+              fontSize: "clamp(120px, 28vw, 520px)",
               letterSpacing: "0.08em",
             }}
           >
