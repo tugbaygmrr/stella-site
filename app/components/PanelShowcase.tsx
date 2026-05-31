@@ -39,7 +39,7 @@ function CornerStat({
   // Combined opacity: reveal progress × scroll-out fade
   const opacity = useTransform(
     [progress, fadeOut] as MotionValue<number>[],
-    ([r, f]) => r * f
+    ([r, f]: number[]) => r * f
   );
   const isRight = corner.includes("r");
 

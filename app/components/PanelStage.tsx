@@ -1,10 +1,38 @@
 "use client";
 
-import { useRef, Suspense, useEffect, useState } from "react";
+import {
+  Component,
+  useRef,
+  Suspense,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF, Environment } from "@react-three/drei";
 import { useScroll, useTransform, type MotionValue } from "framer-motion";
 import * as THREE from "three";
+
+/**
+ * Local boundary around the WebGL canvas. The 3D panel is decorative, so if
+ * the GPU context or an asset fails we silently drop just the panel instead of
+ * letting the error bubble up and white-screen the entire page.
+ */
+class CanvasBoundary extends Component<
+  { children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(error: unknown) {
+    console.error("PanelStage WebGL failed:", error);
+  }
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
 
 const MODEL_PATH =
   "/models/Meshy_AI_Slatted_wooden_panel_0529164548_texture.glb";
@@ -183,43 +211,48 @@ export default function PanelStage() {
       className="fixed inset-0 z-[15] pointer-events-none"
       aria-hidden
     >
-      <Canvas
-        frameloop="demand"
-        camera={{ position: [0, 0, 5], fov: 30 }}
-        gl={{ antialias: !isMobile, alpha: true, powerPreference: "high-performance" }}
-        dpr={isMobile ? 1 : [1, 1.5]}
-      >
-        <ambientLight intensity={0.55} />
-        <directionalLight
-          position={[4, 6, 5]}
-          intensity={1.5}
-          color="#ffffff"
-        />
-        <directionalLight
-          position={[-3, 2, 4]}
-          intensity={0.7}
-          color="#c7e8df"
-        />
-        <directionalLight
-          position={[0, -3, 2]}
-          intensity={0.25}
-          color="#8ea38f"
-        />
-        <ScrollInvalidator scrollY={scrollY} />
-        <Suspense fallback={null}>
-          <Panel
-            opacity={opacity}
-            x={posX}
-            y={posY}
-            z={posZ}
-            rotX={rotX}
-            rotY={rotY}
-            rotZ={rotZ}
-            scale={scale}
+      <CanvasBoundary>
+        <Canvas
+          frameloop="demand"
+          camera={{ position: [0, 0, 5], fov: 30 }}
+          gl={{ antialias: !isMobile, alpha: true, powerPreference: "high-performance" }}
+          dpr={isMobile ? 1 : [1, 1.5]}
+        >
+          {/* Mobile leans harder on direct lights since it skips the HDR env. */}
+          <ambientLight intensity={isMobile ? 0.85 : 0.55} />
+          <directionalLight
+            position={[4, 6, 5]}
+            intensity={isMobile ? 2.0 : 1.5}
+            color="#ffffff"
           />
-          <Environment preset="apartment" />
-        </Suspense>
-      </Canvas>
+          <directionalLight
+            position={[-3, 2, 4]}
+            intensity={0.7}
+            color="#c7e8df"
+          />
+          <directionalLight
+            position={[0, -3, 2]}
+            intensity={0.25}
+            color="#8ea38f"
+          />
+          <ScrollInvalidator scrollY={scrollY} />
+          <Suspense fallback={null}>
+            <Panel
+              opacity={opacity}
+              x={posX}
+              y={posY}
+              z={posZ}
+              rotX={rotX}
+              rotY={rotY}
+              rotZ={rotZ}
+              scale={scale}
+            />
+            {/* The apartment preset fetches an HDR from a CDN — the main
+                mobile crash source. Desktop only; mobile uses the lights above. */}
+            {!isMobile && <Environment preset="apartment" />}
+          </Suspense>
+        </Canvas>
+      </CanvasBoundary>
     </div>
   );
 }

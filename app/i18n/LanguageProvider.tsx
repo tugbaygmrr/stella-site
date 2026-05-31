@@ -49,7 +49,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, []);
 
-  const t = dictionaries[lang];
+  const t = dictionaries[lang] as Dictionary;
 
   return (
     <LanguageContext.Provider value={{ lang, setLang, t }}>

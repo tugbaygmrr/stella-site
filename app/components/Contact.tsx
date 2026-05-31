@@ -148,7 +148,7 @@ export default function Contact() {
           <div className="mt-10 space-y-6">
             {DETAILS.map((d, i) => (
               <div
-                key={d.label}
+                key={i}
                 className="flex items-start gap-5 pt-6"
                 style={{ borderTop: i > 0 ? "1px solid rgba(0,0,0,0.08)" : "none" }}
               >
