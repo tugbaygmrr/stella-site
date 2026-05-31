@@ -2,11 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "../i18n/LanguageProvider";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 const VIDEO_PATH = "/videos/interior-scrub.mp4";
 
 export default function InteriorShowcase() {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const sectionRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [ready, setReady] = useState(false);
@@ -24,6 +26,23 @@ export default function InteriorShowcase() {
     return () => v.removeEventListener("loadedmetadata", onReady);
   }, []);
 
+  // On mobile, scrubbing an mp4 per scroll frame is janky and looks low-quality
+  // (the decoder snaps to keyframes). Instead just play it as a normal looping
+  // video. The scroll-scrub effect below is desktop-only.
+  useEffect(() => {
+    if (!isMobile || !ready) return;
+    const v = videoRef.current;
+    if (!v) return;
+    v.loop = true;
+    const play = () => v.play().catch(() => {});
+    play();
+    return () => {
+      try {
+        v.pause();
+      } catch {}
+    };
+  }, [isMobile, ready]);
+
   /**
    * Scroll scrub — maps section progress to video.currentTime.
    *
@@ -34,7 +53,7 @@ export default function InteriorShowcase() {
    * keeps scrolling smooth instead of janky.
    */
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || isMobile) return;
     const v = videoRef.current;
     const section = sectionRef.current;
     if (!v || !section) return;
@@ -100,21 +119,23 @@ export default function InteriorShowcase() {
       window.removeEventListener("resize", onScroll);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [ready]);
+  }, [ready, isMobile]);
 
   return (
     <section
       ref={sectionRef}
       className="relative w-full bg-charcoal"
-      style={{ height: "300vh" }}
+      style={{ height: isMobile ? "100vh" : "300vh" }}
     >
       <div className="sticky top-0 h-screen w-full overflow-hidden">
-        {/* Full-bleed scroll-scrubbed video */}
+        {/* Full-bleed video: scroll-scrubbed on desktop, plays normally on mobile */}
         <video
           ref={videoRef}
           src={VIDEO_PATH}
           muted
           playsInline
+          autoPlay={isMobile}
+          loop={isMobile}
           preload="auto"
           className="absolute inset-0 w-full h-full object-cover"
           aria-hidden
